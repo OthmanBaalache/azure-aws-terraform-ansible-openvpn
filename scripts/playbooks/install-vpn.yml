@@ -1,0 +1,12 @@
+- name: Update apt packages
+  become: true
+  apt:
+    upgrade: yes
+
+- name: Install Open VPN Server
+  hosts: localhost
+  connection: local
+    gather_facts: false
+    tasks:
+      - name: Pre-Checks
+        shell: echo "Hello" > ~/test.log
