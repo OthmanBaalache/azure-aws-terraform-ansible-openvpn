@@ -1,4 +1,9 @@
+.PHONY: all
+all: tf-init tf-backend tf-init tf-validate tf-plan tf-apply ssh clean vm-keys
 
+SHELL := /bin/bash -l
+TERRAFORM_FOLDER ?= "terraform"
+TERRAFORM_VERSION := 0.12.23
 HOST:=
 GATEWAY_ADDRESS:=
 
@@ -6,23 +11,23 @@ define getHost
 	$(eval HOST=$(shell terraform output dnsLabel)".uksouth.cloudapp.azure.com")
 endef
 
-.PHONY: setup-backend
-setup-backend:
-	@./local-scripts/connect.sh
-	@./local-scripts/main.sh "rg-uks-tfstate" "saukstfstate" "prod" "uksouth"
+tf-backend:
+	@echo "Checking Azure Connection...."
+	@./local-scripts/main.sh
 
-.PHONY: tf-init
 tf-init:
-	@terraform init -backend-config=./environment/$(env)/backend.conf
+	@terraform init ${TERRAFORM_FOLDER}-backend-config=${TERRAFORM_FOLDER}/env/$(env)/backend.conf
 
-.PHONY: tf-plan
+tf-validate:
+	@terraform fmt ${TERRAFORM_FOLDER}
+	@terraform validate ${TERRAFORM_FOLDER}
+
 tf-plan:
-	@terraform fmt
-	@terraform validate
 	@$(call getGateway)
-	@terraform plan -var-file=./environment/$(env)/terraform.tfvars -var="homePip=$(shell curl -4 ifconfig.co)"
+	@terraform plan -var-file=${TERRAFORM_FOLDER}/env/$(env)/terraform.tfvars -var="homePip=$(shell curl -4 ifconfig.co)"
+
 tf-apply:
-	@terraform apply -var-file=./environment/$(env)/terraform.tfvars --auto-approve
+	@terraform apply -var-file=${TERRAFORM_FOLDER}/env/$(env)/terraform.tfvars --auto-approve
 
 ssh:
 	@chmod 400 ~/mykeys/*
@@ -31,7 +36,10 @@ ssh:
 	@ssh-keygen -R $(HOST)
 	@ssh -i ~/mykeys/id_rsa "ovpnadmin@"$(HOST)
 
-.PHONY: clean
-
 clean:
-	@terraform destroy -var-file=./environment/$(env)/terraform.tfvars --auto-approve
+	@terraform destroy -var-file=${TERRAFORM_FOLDER}/env/$(env)/terraform.tfvars --auto-approve
+
+vm-keys:
+	@mkdir -p ./.tmp
+	@ssh-keygen -C "vm-keys" -f ./.tmp/id_rsa -q -N ""
+	@chmod 400 ./.tmp/*
