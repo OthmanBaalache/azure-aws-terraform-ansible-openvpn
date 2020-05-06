@@ -1,0 +1,46 @@
+- hosts: localhost
+  connection: local
+  remote_user: ovpnadmin
+  become: yes
+  vars:
+    http_port: 80
+    max_clients: 200
+
+tasks:
+- name: Update apt packages
+  apt:
+    upgrade: yes
+- name: Install Open VPN Server
+    gather_facts: false
+- name: Pre-Checks
+        shell: echo "Hello" > ~/test.log
+        ignore_errors: True
+
+
+
+
+
+- name: create a virtual host file for {{ vhost }}
+    template:
+      src: somefile.j2
+      dest: /etc/httpd/conf.d/{{ vhost }}
+
+- name: ensure apache is at the latest version
+    yum:
+      name: httpd
+      state: latest
+  - name: write the apache config file
+    template:
+      src: /srv/httpd.j2
+      dest: /etc/httpd.conf
+    notify:
+    - restart apache
+  - name: ensure apache is running
+    service:
+      name: httpd
+      state: started
+  handlers:
+    - name: restart apache
+      service:
+        name: httpd
+        state: restarted

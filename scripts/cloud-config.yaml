@@ -1,0 +1,82 @@
+#cloud-config
+# vim: syntax=yaml
+#
+# boot commands
+# default: none
+# this is very similar to runcmd, but commands run very early
+# in the boot process, only slightly after a 'boothook' would run.
+# bootcmd should really only be used for things that could not be
+# done later in the boot process.  bootcmd is very much like
+# boothook, but possibly with more friendly.
+# - bootcmd will run on every boot
+# - the INSTANCE_ID variable will be set to the current instance id.
+# - you can use 'cloud-init-per' command to help only run once
+#bootcmd:
+#  - echo 192.168.1.130 us.archive.ubuntu.com >> /etc/hosts
+#  - [ cloud-init-per, once, mymkfs, mkfs, /dev/vdb ]
+
+# Update apt database on first boot (run 'apt-get update').
+# Note, if packages are given, or package_upgrade is true, then
+# update will be done independent of this setting.
+#
+# Default: false
+# Aliases: apt_update
+package_update: true
+
+# Upgrade the instance on first boot
+# (ie run apt-get upgrade)
+#
+# Default: false
+# Aliases: apt_upgrade
+apt_upgrade: true
+
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, this apt_update will be set to true
+#
+# packages may be supplied as a single package name or as a list
+# with the format [<package>, <version>] wherein the specifc
+# package version will be installed.
+apt_sources:
+  - source: "ppa:ansible/ansible"
+packages:
+#install Python Package
+  - python-pip
+  - ansible
+
+# run commands
+# default: none
+# runcmd contains a list of either lists or a string
+# each item will be executed in order at rc.local like level with
+# output to the console
+# - runcmd only runs during the first boot
+# - if the item is a list, the items will be properly executed as if
+#   passed to execve(3) (with the first arg as the command).
+# - if the item is a string, it will be simply written to the file and
+#   will be interpreted by 'sh'
+#
+# Note, that the list has to be proper yaml, so you have to quote
+# any characters yaml would eat (':' can be problematic)
+
+runcmd:
+#Install Ansible module for Azure
+#  - pip install ansible[azure]
+# Install Ansible playbook
+#  - ansible-playbook -i localhost ~/playbooks/install-vpn.yml
+
+#- [wget, https://news.ycombinator.com, -O, /tmp/index.html]
+
+# phone_home: if this dictionary is present, then the phone_home
+# cloud-config module will post specified data back to the given
+# url
+# default: none
+# phone_home:
+#   url: http://my.foo.bar/$INSTANCE/
+#   post: all
+#   tries: 10
+#
+#phone_home:
+#  url: http://my.example.com/$INSTANCE_ID/
+#  post: [ pub_key_dsa, pub_key_rsa, pub_key_ecdsa, instance_id ]

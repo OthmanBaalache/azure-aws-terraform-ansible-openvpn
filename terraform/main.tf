@@ -73,7 +73,7 @@ resource "azurerm_network_security_rule" "ssh" {
 
 # Create Network Security Rule
 resource "azurerm_network_security_rule" "vpn" {
-  name                        = "SSH"
+  name                        = "VPN"
   priority                    = 1000
   direction                   = "Inbound"
   access                      = "Allow"
@@ -101,13 +101,18 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+#Create an NSG association with the NIC
+resource "azurerm_network_interface_security_group_association" "nic-nsg" {
+  network_interface_id      = azurerm_network_interface.nic.id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
 # Create a Linux virtual machine
 resource "azurerm_linux_virtual_machine" "vm" {
-  name                = var.hostName
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  network_interface_ids = [
-  azurerm_network_interface.nic.id]
+  name                            = var.hostName
+  location                        = var.location
+  resource_group_name             = azurerm_resource_group.rg.name
+  network_interface_ids           = [azurerm_network_interface.nic.id]
   size                            = "Standard_B1ls"
   admin_username                  = var.user
   computer_name                   = var.hostName
@@ -131,34 +136,26 @@ resource "azurerm_linux_virtual_machine" "vm" {
     sku       = var.sku.uksouth
     version   = "latest"
   }
-
-  provisioner "file" {
-    connection {
-      host        = azurerm_public_ip.publicip.ip_address
-      type        = "ssh"
-      user        = var.user
-      private_key = file("~/mykeys/id_rsa")
-    }
-    source      = "./scripts"
-    destination = "~/scripts"
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      host        = azurerm_public_ip.publicip.ip_address
-      type        = "ssh"
-      user        = var.user
-      private_key = file("~/mykeys/id_rsa")
-    }
-
-    inline = [
-      "ls -latrh",
-      "ls -latrh ~/scripts",
-    ]
-  }
 }
 
-# Data template Bash bootstrapping file
+#Downloads and runs scripts on Azure virtual machines. This extension is useful for post-deployment tasks.
+#The extension will only run a script once, if you want to run a script on every boot, use cloud-init (next)
+#resource "azurerm_virtual_machine_extension" "vmExt" {
+#  name                 = "test"
+#  virtual_machine_id   = azurerm_linux_virtual_machine.vm.id
+#  publisher            = "Microsoft.Azure.Extensions"
+#  type                 = "CustomScript"
+#  type_handler_version = "2.0"
+#  protected_settings = <<PROT
+#    {
+#      "script": "${base64encode(file(var.custom-extScript))}"
+#    }
+#PROT
+#}
+
+#Here we will bootstrap the VM using the native cloud-init as it boots for the first time.
+#Use cloud-config.yaml to install packages and write files, or to configure users and security.
+#https://docs.microsoft.com/en-gb/azure/virtual-machines/linux/using-cloud-init
 data "template_file" "linux-vm-cloud-init" {
-  template = file("./scripts/bash/azure-user-data.sh")
+  template = file(var.cloud-initScript)
 }

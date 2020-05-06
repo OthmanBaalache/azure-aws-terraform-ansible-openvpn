@@ -2,8 +2,7 @@
 all: tf-init tf-backend tf-init tf-validate tf-plan tf-apply ssh clean vm-keys
 
 SHELL := /bin/bash -l
-TERRAFORM_FOLDER ?= "terraform"
-TERRAFORM_VERSION := 0.12.23
+TERRAFORM_FOLDER :="terraform"
 HOST:=
 GATEWAY_ADDRESS:=
 
@@ -12,22 +11,26 @@ define getHost
 endef
 
 tf-backend:
-	@echo "Checking Azure Connection...."
-	@./local-scripts/main.sh
+	echo "Checking Azure Connection...."
+	./scripts/setup-tf-backend.sh
 
 tf-init:
-	@terraform init ${TERRAFORM_FOLDER}-backend-config=${TERRAFORM_FOLDER}/env/$(env)/backend.conf
+	cd ${TERRAFORM_FOLDER} && \
+	terraform init -backend-config=env/$(env)/backend.conf
+	terraform get -update
 
 tf-validate:
-	@terraform fmt ${TERRAFORM_FOLDER}
-	@terraform validate ${TERRAFORM_FOLDER}
+	cd ${TERRAFORM_FOLDER} && \
+	terraform fmt
+	terraform validate
 
 tf-plan:
-	@$(call getGateway)
-	@terraform plan -var-file=${TERRAFORM_FOLDER}/env/$(env)/terraform.tfvars -var="homePip=$(shell curl -4 ifconfig.co)"
+	cd ${TERRAFORM_FOLDER} && \
+	terraform plan -var-file=env/$(env)/terraform.tfvars -var="homePip=$(shell curl -4 ifconfig.co)"
 
 tf-apply:
-	@terraform apply -var-file=${TERRAFORM_FOLDER}/env/$(env)/terraform.tfvars --auto-approve
+	cd ${TERRAFORM_FOLDER} && \
+	terraform apply -var-file=env/$(env)/terraform.tfvars --auto-approve -var="homePip=$(shell curl -4 ifconfig.co)"
 
 ssh:
 	@chmod 400 ~/mykeys/*

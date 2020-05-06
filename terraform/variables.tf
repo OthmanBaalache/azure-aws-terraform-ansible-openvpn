@@ -4,6 +4,14 @@ variable "user" {
   description = "Root user name for virtual machine"
 }
 
+variable custom-extScript {
+  type = string
+}
+
+variable cloud-initScript {
+  type = string
+}
+
 variable "ip" {}
 
 variable "dnsLabel" {
@@ -35,7 +43,7 @@ variable "tags" {
 
 variable "sku" {
   default = {
-    uksouth = "19.04"
+    uksouth = "18.04-LTS"
   }
 }
 
