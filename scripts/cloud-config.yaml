@@ -63,10 +63,9 @@ packages:
 runcmd:
 #Install Ansible module for Azure
 #  - pip install ansible[azure]
-# Install Ansible playbook
-#  - ansible-playbook -i localhost ~/playbooks/install-vpn.yml
-
-#- [wget, https://news.ycombinator.com, -O, /tmp/index.html]
+ - sudo ufw enable
+ - sudo wget -P /playbooks/ --no-check-certificate --content-disposition https://raw.githubusercontent.com/OthmanBaalache/azure-aws-terraform-ansible-openvpn/master/playbooks/install-vpn.yml
+ - sudo ansible-playbook -i localhost /playbooks/install-vpn.yml
 
 # phone_home: if this dictionary is present, then the phone_home
 # cloud-config module will post specified data back to the given
